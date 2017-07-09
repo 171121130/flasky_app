@@ -37,6 +37,7 @@ class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, index=True)
+    userpassword = db.Column(db.String(64), unique=True, index=True)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
 
     def __repr__(self):
@@ -44,8 +45,8 @@ class User(db.Model):
 
 
 class NameForm(FlaskForm):
-    name = StringField('What is your name?', validators=[Required()])#
-    password = StringField('What is your password?', validators=[Required()])
+    name = StringField('name：', validators=[Required()])#
+    password = StringField('password：', validators=[Required()])
     submit = SubmitField('Submit')
 
 
@@ -60,19 +61,35 @@ def internal_server_error(e):
 
 
 @app.route('/', methods=['GET', 'POST'])
-def index():
+def index2():
     form = NameForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.name.data).first()  # 查询User类中是否重复
         if user is None:  # 不重复
-            user = User(username=form.name.data)  # 传入User类的username
+            user = User(username=form.name.data, userpassword=form.name.data)  # 传入User类的username
+            session['known'] = False  # 变量 known 被写入用户会话中,可以传给html
+        else:
+            session['known'] = True
+        session['name'] = form.name.data
+        return redirect(url_for('index2'))  # 重定向到index()
+    return render_template('index.html', form=form, name=session.get('name'),
+                           known=session.get('known', False))  # 渲染html
+
+
+@app.route('/admin/', methods=['GET', 'POST'])
+def index_admin():
+    form = NameForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.name.data).first()  # 查询User类中是否重复
+        if user is None:  # 不重复
+            user = User(username=form.name.data, userpassword=form.name.data)  # 传入User类的username
             db.session.add(user)  # 数据库表单添加行
             session['known'] = False  # 变量 known 被写入用户会话中,可以传给html
         else:
             session['known'] = True
         session['name'] = form.name.data
-        return redirect(url_for('index'))  # 重定向到index()
-    return render_template('index.html', form=form, name=session.get('name'),
+        return redirect(url_for('index_admin'))  # 重定向到index()
+    return render_template('index_admin.html', form=form, name=session.get('name'),
                            known=session.get('known', False))  # 渲染html
 
 
