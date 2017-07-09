@@ -60,8 +60,8 @@ def internal_server_error(e):
     return render_template('500.html'), 500
 
 
-@app.route('/', methods=['GET', 'POST'])
-def index2():
+@app.route('/user/login/', methods=['GET', 'POST'])
+def index():
     form = NameForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.name.data).first()  # 查询User类中是否重复
@@ -71,10 +71,25 @@ def index2():
         else:
             session['known'] = True
         session['name'] = form.name.data
-        return redirect(url_for('index2'))  # 重定向到index()
-    return render_template('index.html', form=form, name=session.get('name'),
+        return redirect(url_for('user_page'))  # 重定向到index()
+    return render_template('user_login.html', form=form, name=session.get('name'),
                            known=session.get('known', False))  # 渲染html
 
+
+@app.route('/user/page/', methods=['GET', 'POST'])
+def user_page():
+    form = NameForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.name.data).first()  # 查询User类中是否重复
+        if user is None:  # 不重复
+            user = User(username=form.name.data, userpassword=form.name.data)  # 传入User类的username
+            session['known'] = False  # 变量 known 被写入用户会话中,可以传给html
+        else:
+            session['known'] = True
+        session['name'] = form.name.data
+        return redirect(url_for('user_page'))  # 重定向到index()
+    return render_template('user_page.html', form=form, name=session.get('name'),
+                           known=session.get('known', False))  # 渲染html
 
 @app.route('/admin/', methods=['GET', 'POST'])
 def index_admin():
